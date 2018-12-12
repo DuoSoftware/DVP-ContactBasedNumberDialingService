@@ -164,10 +164,10 @@ async function get_external_profiles(profile_ids,tenant,company) {
     return ExternalUser.find({company: company, tenant: tenant,'_id': { $in: profile_ids}}).select('phone contacts');
 }
 
-async function get_contact_by_campaign_id(campaign_id,page_no,row_count,tenant,company) {
+async function get_contact_by_campaign_id(campaign_id,offset,row_count,tenant,company) {
     return DbConn.CampContactbaseNumbers.findAll({
         where: [{CampaignId: campaign_id},{TenantId: tenant},{CompanyId: company}],
-        offset: ((page_no - 1) * row_count),
+        offset: offset,
         limit: row_count,
         attributes: ['ExternalUserID']
     })
@@ -176,7 +176,7 @@ async function get_contact_by_campaign_id(campaign_id,page_no,row_count,tenant,c
 async function  get_contact_processer(req,res){
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
-    let contact_list = await get_contact_by_campaign_id(req.params.CampaignID,req.params.page_no,req.params.row_count,tenant,company);
+    let contact_list = await get_contact_by_campaign_id(req.params.CampaignID,req.params.offset,req.params.row_count,tenant,company);
     let external_profile_ids = [];
     contact_list.forEach(function (item) {
        external_profile_ids.push(item.ExternalUserID) ;
@@ -239,7 +239,7 @@ module.exports.GetContactsCountByCampaign = function (req, res) {
 module.exports.GetContactsByCampaign = function (req, res) {
     var jsonString;
 
-    if(req.params.CampaignID && req.params.page_no&&req.params.row_count){
+    if(req.params.CampaignID && req.params.offset&&req.params.row_count){
      get_contact_processer(req,res).then(profiles=>{
          jsonString = messageFormatter.FormatMessage(undefined, "Contacts", true, profiles);
          res.end(jsonString);

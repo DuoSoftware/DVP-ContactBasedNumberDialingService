@@ -136,7 +136,7 @@ server.get('/DVP/API/:version/Campaign/:CampaignID/Contacts/Count', authorizatio
     return next();
 });
 
-server.get('/DVP/API/:version/Campaign/:CampaignID/Contacts/:row_count/:page_no', authorization({
+server.get('/DVP/API/:version/Campaign/:CampaignID/Contacts/:row_count/:offset', authorization({
     resource: "campaign",
     action: "write"
 }), function (req, res, next) {
