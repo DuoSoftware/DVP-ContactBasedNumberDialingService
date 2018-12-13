@@ -11,7 +11,7 @@ module.exports = {
         "Type":"",
         "User":"",
         "Password":"",
-        "Port":,
+        "Port":"",
         "Host":"",
         "Database":""
     },
