@@ -120,6 +120,11 @@ server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
     return next();
 });
 
+server.get('/DVP/API/:version/Campaign/Test', function (req, res, next) {
+    logger.info("=========TEST METHOD===========");
+    return next();
+});
+
 server.get('/DVP/API/:version/Campaign/:CampaignID/Contacts/Count', authorization({
     resource: "campaign",
     action: "write"
