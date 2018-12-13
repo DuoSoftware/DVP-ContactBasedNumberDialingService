@@ -8,17 +8,6 @@ module.exports = {
         "Database":"SYS_DATABASE_POSTGRES_USER"
     },
 
-    "RabbitMQ":
-    {
-        "ip": "SYS_RABBITMQ_HOST",
-        "port": "SYS_RABBITMQ_PORT",
-        "user": "SYS_RABBITMQ_USER",
-        "password": "SYS_RABBITMQ_PASSWORD",
-        "vhost":"SYS_RABBITMQ_VHOST"
-    },
-
-
-
     "Redis":
     {
         "mode":"SYS_REDIS_MODE",
@@ -50,7 +39,6 @@ module.exports = {
 
     },
 
-
     "Mongo":
     {
         "ip":"SYS_MONGO_HOST",
@@ -62,45 +50,12 @@ module.exports = {
     },
 
 
-    "auth":{
-
-        // OAuth 2.0
-        FACEBOOK_SECRET: 'FACEBOOK_CLIENT_SECRET',
-        FOURSQUARE_SECRET: 'FOURSQUARE_CLIENT_SECRET',
-        GOOGLE_SECRET: 'GOOGLE_CLIENT_SECRET',
-        //
-        GITHUB_SECRET: 'GITHUB_CLIENT_SECRET',
-        INSTAGRAM_SECRET: 'INSTAGRAM_CLIENT_SECRET',
-        LINKEDIN_SECRET: 'INKEDIN_CLIENT_SECRET',
-        TWITCH_SECRET: 'TWITCH_CLIENT_SECRET',
-        WINDOWS_LIVE_SECRET: 'MICROSOFT_CLIENT_SECRET',
-        YAHOO_SECRET: 'YAHOO_CLIENT_SECRET',
-        BITBUCKET_SECRET:  'BITBUCKET_CLIENT_SECRET',
-        SPOTIFY_SECRET: 'SPOTIFY_CLIENT_SECRET',
-
-        // OAuth 1.0
-        TWITTER_KEY: 'TWITTER_CLIENT_KEY',
-        TWITTER_SECRET: 'TWITTER_CLIENT_SECRET',
-
-        login_verification: 'LOGIN_VERIFICATION_REQUIRE',
-        signup_verification: 'SIGNUP_VERIFICATION_REQUIRE',
-        recaptcha_key: 'GOOGLE_RECAPTCHA_KEY',
-
-        ui_host: 'SYS_APP_UI_HOST',
-        agent_host: 'SYS_APP_AGENT_UI_HOST',
-
-        common_signature: "JWT_COMMON_SIGNATURE",
-        multi_login: "SYS_AUTH_MULTI_LOGIN"
-
-    },
-
-
     "Host":
     {
         "profilesearch":"EXTERNAL_PROFILE_SEARCH",
         "vdomain": "LB_FRONTEND",
         "domain": "HOST_NAME",
-        "port": "HOST_USERSERVICE_PORT",
+        "port": "HOST_CONTACTBASEDNUMBERDIALINGSERVICE_PORT",
         "version": "HOST_VERSION"
 
     },
