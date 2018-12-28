@@ -4,8 +4,13 @@
 
 var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
 var ExternalUser = require('dvp-mongomodels/model/ExternalUser');
+var bulk = require('dvp-mongomodels/model/ExternalUser').collection.initializeOrderedBulkOp();
+//var People = require("./models/people").collection.initializeOrderedBulkOp();
 var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 var DbConn = require('dvp-dbmodels');
+var mongoose = require('mongoose');
+var Schema = mongoose.Schema;
+var ObjectId = Schema.ObjectId;
 
 /*---------------------- number Upload -------------------------------------*/
 
@@ -81,9 +86,65 @@ async function process_external_profile(contact, tenantId, companyId) {
         profile_list.new_profile = await build_new_external_profile(contact, tenantId, companyId);
     }
     else {
+        if (contact.contacts) {
+
+            contact.contacts.map(function (item) {
+               if( existing_profile._doc)
+                   existing_profile._doc.contacts.push(item);
+            });
+
+            /*let contacts = existing_profile._doc.contacts.concat(contact.contacts);
+            existing_profile._doc.contacts = contacts;*/
+        }
         profile_list.existing_profile = existing_profile;
     }
     return profile_list;
+}
+
+async function update_existing_profile(profiles) {
+
+    /*bulk.find({"email" : "sukithaj@gmail.com"}).update({'$addToSet': {
+            'contacts': {
+                "verified" : false,
+                "display" : "Pawan Sasanka",
+                "type" : "email",
+                "contact" : "pawan@duosoftware.com"
+            }
+        }},{ upsert: true });*/
+
+    return new Promise((resolve, reject) => {
+        var bulk = require('dvp-mongomodels/model/ExternalUser').collection.initializeOrderedBulkOp();
+
+        profiles.forEach(function (profile) {
+            if (profile && profile._doc.contacts) {
+                profile._doc.contacts.forEach(function (item) {
+                    if (item._doc)
+                    {
+                        bulk.find({_id:mongoose.Types.ObjectId(profile._doc._id.toString())}).update({
+                              '$addToSet': {
+                                  'contacts': {
+                                      "verified": item._doc.verified,
+                                      "display": item._doc.display,
+                                      "type": item._doc.type,
+                                      "contact": item._doc.contact,
+                                  }
+                              }
+                          }, {upsert: true});
+                    }
+
+                })
+            }
+
+        });
+        bulk.execute(function (error) {
+            console.log(error);
+            if (error) {
+                reject(error)
+            } else {
+                resolve(error)
+            }
+        })
+    });
 }
 
 async function save_new_external_profiles(profiles) {
@@ -126,7 +187,8 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo)
                 Status: true,
                 TenantId: tenant,
                 CompanyId: company,
-                BatchNo: batchNo ? batchNo : "default"
+                BatchNo: batchNo ? batchNo : "default",
+                Status:'added'
             };
             nos.push(no);
         }
@@ -150,6 +212,8 @@ async function process_upload_numbers(contacts, tenant, company, campaignID, bat
     });
     if (profiles.new_profiles.length > 0)
         profiles.new_profiles = await save_new_external_profiles(profiles.new_profiles);
+    if (profiles.existing_profiles.length > 0)
+        profiles.existing_profiles = await update_existing_profile(profiles.existing_profiles);
     let contact_list = profiles.new_profiles.concat(profiles.existing_profiles);
     let saved_data = await save_new_contacts(contact_list, campaignID, tenant, company, batchNo);
     return saved_data;
@@ -159,29 +223,29 @@ async function process_upload_numbers(contacts, tenant, company, campaignID, bat
 
 /*--------------------------------- get numbers -----------------------------------*/
 
-async function get_external_profiles(profile_ids,tenant,company) {
+async function get_external_profiles(profile_ids, tenant, company) {
 
-    return ExternalUser.find({company: company, tenant: tenant,'_id': { $in: profile_ids}}).select('phone contacts');
+    return ExternalUser.find({company: company, tenant: tenant, '_id': {$in: profile_ids}}).select('phone contacts');
 }
 
-async function get_contact_by_campaign_id(campaign_id,offset,row_count,tenant,company) {
+async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant, company) {
     return DbConn.CampContactbaseNumbers.findAll({
-        where: [{CampaignId: campaign_id},{TenantId: tenant},{CompanyId: company}],
+        where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company},{Status:'added'}],
         offset: offset,
         limit: row_count,
         attributes: ['ExternalUserID']
     })
 }
 
-async function  get_contact_processer(req,res){
+async function get_contact_processer(req, res) {
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
-    let contact_list = await get_contact_by_campaign_id(req.params.CampaignID,req.params.offset,req.params.row_count,tenant,company);
+    let contact_list = await get_contact_by_campaign_id(req.params.CampaignID, req.params.offset, req.params.row_count, tenant, company);
     let external_profile_ids = [];
     contact_list.forEach(function (item) {
-       external_profile_ids.push(item.ExternalUserID) ;
+        external_profile_ids.push(item.ExternalUserID);
     });
-    contact_list = await get_external_profiles(external_profile_ids,tenant,company);
+    contact_list = await get_external_profiles(external_profile_ids, tenant, company);
     console.log(contact_list);
     return contact_list;
 
@@ -220,18 +284,18 @@ module.exports.GetContactsCountByCampaign = function (req, res) {
     var jsonString;
     var tenant = parseInt(req.user.tenant);
     var company = parseInt(req.user.company);
-    if(req.params.CampaignID ){
+    if (req.params.CampaignID) {
         DbConn.CampContactbaseNumbers.count({
-            where: [{CampaignId: req.params.CampaignID },{TenantId: tenant},{CompanyId: company}]
+            where: [{CampaignId: req.params.CampaignID}, {TenantId: tenant}, {CompanyId: company}]
         }).then(function (count) {
             jsonString = messageFormatter.FormatMessage(undefined, "Contacts count", true, count);
             res.end(jsonString);
         }).catch(function (error) {
-            jsonString = messageFormatter.FormatMessage(error, "Fail To Get contact count" , false, error);
+            jsonString = messageFormatter.FormatMessage(error, "Fail To Get contact count", false, error);
             res.end(jsonString);
         });
-    }else {
-        jsonString = messageFormatter.FormatMessage(undefined, "Missing some important parameters" , false, undefined);
+    } else {
+        jsonString = messageFormatter.FormatMessage(undefined, "Missing some important parameters", false, undefined);
         res.end(jsonString);
     }
 };
@@ -239,16 +303,16 @@ module.exports.GetContactsCountByCampaign = function (req, res) {
 module.exports.GetContactsByCampaign = function (req, res) {
     var jsonString;
 
-    if(req.params.CampaignID && req.params.offset&&req.params.row_count){
-     get_contact_processer(req,res).then(profiles=>{
-         jsonString = messageFormatter.FormatMessage(undefined, "Contacts", true, profiles);
-         res.end(jsonString);
-     }).catch(error=>{
-         jsonString = messageFormatter.FormatMessage(error, "Fail To Get Contacts", false, null);
-         res.end(jsonString);
-     })
-    }else {
-        jsonString = messageFormatter.FormatMessage(undefined, "Missing some important parameters" , false, undefined);
+    if (req.params.CampaignID && req.params.offset && req.params.row_count) {
+        get_contact_processer(req, res).then(profiles => {
+            jsonString = messageFormatter.FormatMessage(undefined, "Contacts", true, profiles);
+            res.end(jsonString);
+        }).catch(error => {
+            jsonString = messageFormatter.FormatMessage(error, "Fail To Get Contacts", false, null);
+            res.end(jsonString);
+        })
+    } else {
+        jsonString = messageFormatter.FormatMessage(undefined, "Missing some important parameters", false, undefined);
         res.end(jsonString);
     }
 };
