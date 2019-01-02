@@ -120,13 +120,29 @@ server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
     return next();
 });
 
-server.get('/DVP/API/:version/Campaign/:CampaignID/Contacts/Count', authorization({
+server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts/:Status', authorization({
     resource: "campaign",
     action: "write"
 }), function (req, res, next) {
     try {
+        logger.info('UpdateContactStatus');
+        externalProfileUploader.UpdateContactStatus(req,res);
+    }
+    catch (ex) {
+        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('UpdateContactStatus : %s ', jsonString);
+        res.end(jsonString);
+    }
+    return next();
+});
+
+server.del('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
+    resource: "campaign",
+    action: "delete"
+}), function (req, res, next) {
+    try {
         logger.info('GetContactsCountByCampaign');
-        externalProfileUploader.GetContactsCountByCampaign(req,res);
+        externalProfileUploader.DeleteContacts(req,res);
     }
     catch (ex) {
         var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
