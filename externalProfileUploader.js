@@ -75,7 +75,7 @@ function build_new_external_profile(contact, tenant, company) {
                 }
             });
         }
-        resolve(extUser._doc);
+        resolve(extUser);
     });
 }
 
@@ -193,7 +193,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo)
                     CompanyId: company,
                     BatchNo: batchNo ? batchNo : "default",
                     DialerStatus: 'added',
-                    PreviewData:contacts[i]._doc.PreviewData
+                    PreviewData: contacts[i]._doc.PreviewData
                 };
                 nos.push(no);
             }
@@ -238,7 +238,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo)
     );*/
 }
 
-async function process_upload_numbers(contacts, tenant, company, campaignID, batchNo,previewData) {
+async function process_upload_numbers(contacts, tenant, company, campaignID, batchNo) {
     let promises = contacts.map((contact) => process_external_profile(contact, tenant, company));
     let results = await Promise.all(promises);
     let profiles = {new_profiles: [], existing_profiles: []};
@@ -249,8 +249,11 @@ async function process_upload_numbers(contacts, tenant, company, campaignID, bat
             profiles.existing_profiles.push(profile.existing_profile);
         }
     });
-    if (profiles.new_profiles.length > 0)
-        profiles.new_profiles = await save_new_external_profiles(profiles.new_profiles);
+    if (profiles.new_profiles.length > 0) {
+        //profiles.new_profiles = await save_new_external_profiles(profiles.new_profiles);
+        let saved_profiles = await save_new_external_profiles(profiles.new_profiles);
+        profiles.new_profiles = Object.assign(saved_profiles, profiles.new_profiles);
+    }
     if (profiles.existing_profiles.length > 0)
         await update_existing_profile(profiles.existing_profiles);
     let contact_list = profiles.new_profiles.concat(profiles.existing_profiles);
@@ -280,7 +283,11 @@ function update_loaded_numbers(CamContactBaseNumberIds) {
                 }
             ]
         }
-    );
+    ).then(function (results) {
+        console.log(results);
+    }).catch(function (err) {
+        console.log(err);
+    });
 
 }
 
@@ -294,12 +301,12 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
 
     return new Promise((resolve, reject) => {
         DbConn.CampContactbaseNumbers.findAll({
-            where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company},{DialerStatus: 'added'}],
+            where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {DialerStatus: 'added'}],
             offset: offset,
             limit: row_count,
-            attributes: ['ExternalUserID', 'CamContactBaseNumberId']
+            attributes: ['ExternalUserID', 'CamContactBaseNumberId','PreviewData']
         }).then(function (results) {
-            if (results) {
+            if (results && results.length > 0) {
                 let ids = results.map(function (item) {
                     return item.dataValues.CamContactBaseNumberId;
                 });
@@ -317,12 +324,21 @@ async function get_contact_processer(req, res) {
     let company = parseInt(req.user.company);
     let contact_list = await get_contact_by_campaign_id(req.params.CampaignID, req.params.offset, req.params.row_count, tenant, company);
     let external_profile_ids = [];
+    let external_profile = {};
     contact_list.forEach(function (item) {
         external_profile_ids.push(item.ExternalUserID);
+        external_profile[item.ExternalUserID] = item.PreviewData;
     });
-    contact_list = await get_external_profiles(external_profile_ids, tenant, company);
-    console.log(contact_list);
-    return contact_list;
+    let profile_list = await get_external_profiles(external_profile_ids, tenant, company);
+
+    if(profile_list){
+        profile_list=profile_list.map(function (item) {
+            item._doc.PreviewData = external_profile[item._id.toString()];
+            return item;
+        })
+    }
+    console.log(profile_list);
+    return profile_list;
 
 }
 
