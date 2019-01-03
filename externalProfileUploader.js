@@ -79,13 +79,14 @@ function build_new_external_profile(contact, tenant, company) {
     });
 }
 
+
 async function process_external_profile(contact, tenantId, companyId) {
     let profile_list = {new_profile: null, existing_profile: null};
     let existing_profile = await validate_external_profile(contact, tenantId, companyId);
 
     if (existing_profile == null) {
         profile_list.new_profile = await build_new_external_profile(contact, tenantId, companyId);
-        profile_list.new_profile._doc.PreviewData = contact.PreviewData;
+        profile_list.new_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
     }
     else {
 
@@ -99,7 +100,7 @@ async function process_external_profile(contact, tenantId, companyId) {
             /*let contacts = existing_profile._doc.contacts.concat(contact.contacts);
             existing_profile._doc.contacts = contacts;*/
         }
-        existing_profile._doc.PreviewData = contact.PreviewData;
+        existing_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
         profile_list.existing_profile = existing_profile;
     }
     return profile_list;
@@ -304,7 +305,7 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
             where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {DialerStatus: 'added'}],
             offset: offset,
             limit: row_count,
-            attributes: ['ExternalUserID', 'CamContactBaseNumberId','PreviewData']
+            attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData']
         }).then(function (results) {
             if (results && results.length > 0) {
                 let ids = results.map(function (item) {
@@ -331,8 +332,8 @@ async function get_contact_processer(req, res) {
     });
     let profile_list = await get_external_profiles(external_profile_ids, tenant, company);
 
-    if(profile_list){
-        profile_list=profile_list.map(function (item) {
+    if (profile_list) {
+        profile_list = profile_list.map(function (item) {
             item._doc.PreviewData = external_profile[item._id.toString()];
             return item;
         })
