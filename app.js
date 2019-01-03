@@ -1,16 +1,16 @@
-var restify = require('restify');
-var logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
-var config = require('config');
-var jwt = require('restify-jwt');
-var secret = require('dvp-common/Authentication/Secret.js');
-var authorization = require('dvp-common/Authentication/Authorization.js');
-var externalProfileUploader = require('./externalProfileUploader');
-var port = config.Host.port || 3000;
-var host = config.Host.vdomain || 'localhost';
-var mongoose = require('mongoose');
-var messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
+let restify = require('restify');
+let logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+let config = require('config');
+let jwt = require('restify-jwt');
+let secret = require('dvp-common/Authentication/Secret.js');
+let authorization = require('dvp-common/Authentication/Authorization.js');
+let externalProfileUploader = require('./externalProfileUploader');
+let port = config.Host.port || 3000;
+let host = config.Host.vdomain || 'localhost';
+let mongoose = require('mongoose');
+let messageFormatter = require('dvp-common/CommonMessageGenerator/ClientMessageJsonFormatter.js');
 
-var server = restify.createServer({
+let server = restify.createServer({
     name: "DVP Contact base number upload Service"
 });
 
@@ -25,15 +25,15 @@ server.use(restify.queryParser());
 
 server.use(jwt({secret: secret.Secret}));
 
-var util = require('util');
-var mongoip=config.Mongo.ip;
-var mongoport=config.Mongo.port;
-var mongodb=config.Mongo.dbname;
-var mongouser=config.Mongo.user;
-var mongopass = config.Mongo.password;
-var mongoreplicaset= config.Mongo.replicaset;
+let util = require('util');
+let mongoip=config.Mongo.ip;
+let mongoport=config.Mongo.port;
+let mongodb=config.Mongo.dbname;
+let mongouser=config.Mongo.user;
+let mongopass = config.Mongo.password;
+let mongoreplicaset= config.Mongo.replicaset;
 
-var connectionstring = '';
+let connectionstring = '';
 
 console.log(mongoip);
 
@@ -113,7 +113,7 @@ server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
         externalProfileUploader.UploadExternalProfile(req,res);
     }
     catch (ex) {
-        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        let jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('UploadExternalProfile : %s ', jsonString);
         res.end(jsonString);
     }
@@ -129,7 +129,7 @@ server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts/:Status', authoriza
         externalProfileUploader.UpdateContactStatus(req,res);
     }
     catch (ex) {
-        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        let jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('UpdateContactStatus : %s ', jsonString);
         res.end(jsonString);
     }
@@ -145,7 +145,7 @@ server.del('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
         externalProfileUploader.DeleteContacts(req,res);
     }
     catch (ex) {
-        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        let jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('GetContactsCountByCampaign : %s ', jsonString);
         res.end(jsonString);
     }
@@ -161,7 +161,7 @@ server.get('/DVP/API/:version/Campaign/:CampaignID/Contacts/:row_count/:offset',
         externalProfileUploader.GetContactsByCampaign(req,res);
     }
     catch (ex) {
-        var jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        let jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
         logger.error('GetContactsByCampaign : %s ', jsonString);
         res.end(jsonString);
     }

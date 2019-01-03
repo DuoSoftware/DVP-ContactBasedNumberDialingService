@@ -328,6 +328,66 @@ async function get_contact_processer(req, res) {
 
 /*--------------------------------- end get numbers -----------------------------------*/
 
+async function UpdateContactStatus(req, res) {
+    let tenant = parseInt(req.user.tenant);
+    let company = parseInt(req.user.company);
+    let campaign_id = req.params.CampaignID;
+    let status = req.params.Status;
+
+    let condition = [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}];
+    let CamContactBaseNumberIds = req.body.CamContactBaseNumberIds;
+    if (CamContactBaseNumberIds) {
+        if (Array.isArray(CamContactBaseNumberIds))
+            condition.push({CamContactBaseNumberId: {$in: CamContactBaseNumberIds}});
+        else
+            condition.push({CamContactBaseNumberId: CamContactBaseNumberIds});
+    }
+
+
+    return new Promise((resolve, reject) => {
+        DbConn.CampContactbaseNumbers.update({
+                DialerStatus: status
+            },
+            {
+                where: condition
+            }
+        ).then(function (results) {
+            resolve(results);
+        }).catch(function (err) {
+            reject(err)
+        });
+    });
+
+}
+
+async function DeleteContacts(req, res) {
+    let tenant = parseInt(req.user.tenant);
+    let company = parseInt(req.user.company);
+    let campaign_id = req.params.CampaignID;
+
+    let condition = [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}];
+    let Contacts = req.body.Contacts;
+    if (Contacts) {
+        if (Array.isArray(Contacts))
+            condition.push({CamContactBaseNumberId: {$in: Contacts}});
+        else
+            condition.push({CamContactBaseNumberId: Contacts});
+    }
+
+
+    return new Promise((resolve, reject) => {
+        DbConn.CampContactbaseNumbers.destroy(
+            {
+                where: condition
+            }
+        ).then(function (results) {
+            resolve(results);
+        }).catch(function (err) {
+            reject(err)
+        });
+    });
+
+}
 
 module.exports.UploadExternalProfile = function (req, res) {
 
@@ -392,39 +452,6 @@ module.exports.GetContactsByCampaign = function (req, res) {
     }
 };
 
-async function UpdateContactStatus(req, res) {
-    let tenant = parseInt(req.user.tenant);
-    let company = parseInt(req.user.company);
-    let campaign_id = req.params.CampaignID;
-    let status = req.params.Status;
-
-    let condition = [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}];
-    let CamContactBaseNumberIds = req.body.CamContactBaseNumberIds;
-    if (CamContactBaseNumberIds) {
-        if (Array.isArray(CamContactBaseNumberIds))
-            condition.push({CamContactBaseNumberId: {$in: CamContactBaseNumberIds}});
-        else
-            condition.push({CamContactBaseNumberId: CamContactBaseNumberIds});
-    }
-
-
-    return new Promise((resolve, reject) => {
-        DbConn.CampContactbaseNumbers.update({
-                DialerStatus: status
-            },
-            {
-                where: condition
-            }
-        ).then(function (results) {
-            resolve(results);
-        }).catch(function (err) {
-            reject(err)
-        });
-    });
-
-}
-
-
 module.exports.UpdateContactStatus = function (req, res) {
     let jsonString;
 
@@ -441,36 +468,6 @@ module.exports.UpdateContactStatus = function (req, res) {
         res.end(jsonString);
     }
 };
-
-async function DeleteContacts(req, res) {
-    let tenant = parseInt(req.user.tenant);
-    let company = parseInt(req.user.company);
-    let campaign_id = req.params.CampaignID;
-
-    let condition = [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}];
-    let Contacts = req.body.Contacts;
-    if (Contacts) {
-        if (Array.isArray(Contacts))
-            condition.push({CamContactBaseNumberId: {$in: Contacts}});
-        else
-            condition.push({CamContactBaseNumberId: Contacts});
-    }
-
-
-    return new Promise((resolve, reject) => {
-        DbConn.CampContactbaseNumbers.destroy(
-            {
-                where: condition
-            }
-        ).then(function (results) {
-            resolve(results);
-        }).catch(function (err) {
-            reject(err)
-        });
-    });
-
-}
-
 
 module.exports.DeleteContacts = function (req, res) {
     let jsonString;
