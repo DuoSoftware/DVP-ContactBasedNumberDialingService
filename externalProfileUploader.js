@@ -90,16 +90,18 @@ async function process_external_profile(contact, tenantId, companyId) {
     }
     else {
 
-        if (contact.contacts) {
+
+        if (contact.contacts&&contact.contacts_update) {
 
             contact.contacts.map(function (item) {
                 if (existing_profile._doc)
                     existing_profile._doc.contacts.push(item);
             });
 
-            /*let contacts = existing_profile._doc.contacts.concat(contact.contacts);
-            existing_profile._doc.contacts = contacts;*/
+        }else {
+            existing_profile._doc.contacts = contact.contacts;
         }
+        existing_profile._doc.contacts_update = contact.contacts_update;
         existing_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
         profile_list.existing_profile = existing_profile;
     }
@@ -122,21 +124,31 @@ async function update_existing_profile(profiles) {
 
         profiles.forEach(function (profile) {
             if (profile && profile._doc.contacts) {
-                profile._doc.contacts.forEach(function (item) {
-                    if (item._doc) {
-                        bulk.find({_id: mongoose.Types.ObjectId(profile._doc._id.toString())}).update({
-                            '$addToSet': {
-                                'contacts': {
-                                    "verified": item._doc.verified,
-                                    "display": item._doc.display,
-                                    "type": item._doc.type,
-                                    "contact": item._doc.contact,
-                                }
-                            }
-                        }, {upsert: true});
-                    }
+                if(profile._doc.contacts_update){
 
-                })
+                    profile._doc.contacts.forEach(function (item) {
+                        if (item._doc) {
+                            bulk.find({_id: mongoose.Types.ObjectId(profile._doc._id.toString())}).update({
+                                '$addToSet': {
+                                    'contacts': {
+                                        "contact": item._doc.contact,
+                                        "type": item._doc.type,
+                                        "display": item._doc.display,
+                                        "verified": item._doc.verified
+                                    }
+                                }
+                            }, {upsert: true});
+                        }
+
+                    })
+
+
+                }
+                else{
+                    bulk.find({_id: mongoose.Types.ObjectId(profile._doc._id.toString())}).update(
+                        { $set: { 'contacts': profile._doc.contacts } }
+                    )
+                }
             }
 
         });

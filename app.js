@@ -104,6 +104,12 @@ process.on('SIGINT', function() {
     });
 });
 
+/*{
+    "contacts":[{"firstname":"John", "lastname":"Smith","phone":"187078978505654078978","PreviewData":{"loan":"duo","ssn":"werwerwe"}, "contacts":[{"contact": "18705056560","type": "land","display": "18705056560","verified": true}]},
+    {"firstname":"John", "lastname":"Smith","phone":"+941234567845345349999955665555","PreviewData":"credit"},
+    {"firstname":"Mozella", "lastname":"Knutsen","phone":"+94122984552526789","contacts_update":true,"contacts":[{"contact": "+94123456789","type": "land","display": "+94123456789","verified": false},{"contact": "0773458612","type": "mobile","display": "0773458612","verified": true}],"PreviewData":"loan123"}]
+}*/
+
 server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
     resource: "campaign",
     action: "write"
