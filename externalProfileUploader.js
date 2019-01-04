@@ -15,12 +15,38 @@ let ObjectId = Schema.ObjectId;
 /*---------------------- number Upload -------------------------------------*/
 
 function validate_external_profile(contact, tenant, company) {
-    return ExternalUser.findOne({phone: contact.phone, company: company, tenant: tenant});
+    let condition = contact.thirdpartyreference?{thirdpartyreference: contact.thirdpartyreference, company: company, tenant: tenant}:{phone: contact.phone, company: company, tenant: tenant};
+    return ExternalUser.findOne(condition);
+
+   /* return new Promise((resolve, reject) => {
+        let condition = contact.thirdpartyreference ? {
+            thirdpartyreference: contact.thirdpartyreference,
+            company: company,
+            tenant: tenant
+        } : {phone: contact.phone, company: company, tenant: tenant};
+        ExternalUser.findOne(condition, function (err, obj) {
+            if (err) {
+                reject(err);
+            } else if (obj === null && contact.thirdpartyreference) {
+                ExternalUser.findOne({phone: contact.phone, company: company, tenant: tenant}, function (err, obj) {
+                    if (err) {
+                        reject(err);
+                    }  else {
+                        resolve(obj === null?obj:{});
+                    }
+                });
+            } else {
+                resolve(obj)
+            }
+        });
+    });*/
+
 }
 
 function build_new_external_profile(contact, tenant, company) {
     return new Promise((resolve, reject) => {
         let extUser = ExternalUser({
+            thirdpartyreference: contact.thirdpartyreference,
             title: contact.title,
             name: contact.name,
             avatar: contact.avatar,
@@ -90,20 +116,26 @@ async function process_external_profile(contact, tenantId, companyId) {
     }
     else {
 
+        if (existing_profile._doc) {
+            if (contact.contacts && contact.contacts_update) {
 
-        if (contact.contacts&&contact.contacts_update) {
+                contact.contacts.map(function (item) {
+                    if (existing_profile._doc)
+                        existing_profile._doc.contacts.push(item);
+                });
 
-            contact.contacts.map(function (item) {
-                if (existing_profile._doc)
-                    existing_profile._doc.contacts.push(item);
-            });
+            } else {
+                existing_profile._doc.contacts = contact.contacts;
+            }
+            if (existing_profile._doc.thirdpartyreference === contact.thirdpartyreference) {
+                existing_profile._doc.phone = contact.phone;
+            }
 
-        }else {
-            existing_profile._doc.contacts = contact.contacts;
+            existing_profile._doc.contacts_update = contact.contacts_update;
+            existing_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
+            profile_list.existing_profile = existing_profile;
         }
-        existing_profile._doc.contacts_update = contact.contacts_update;
-        existing_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
-        profile_list.existing_profile = existing_profile;
+
     }
     return profile_list;
 }
@@ -124,29 +156,27 @@ async function update_existing_profile(profiles) {
 
         profiles.forEach(function (profile) {
             if (profile && profile._doc.contacts) {
-                if(profile._doc.contacts_update){
-
+                if (profile._doc.contacts_update) {
                     profile._doc.contacts.forEach(function (item) {
                         if (item._doc) {
                             bulk.find({_id: mongoose.Types.ObjectId(profile._doc._id.toString())}).update({
                                 '$addToSet': {
-                                    'contacts': {
+
+                                    'api_contacts': {
                                         "contact": item._doc.contact,
                                         "type": item._doc.type,
                                         "display": item._doc.display,
                                         "verified": item._doc.verified
                                     }
-                                }
+                                },
+                                '$set': {'phone': profile._doc.phone}
                             }, {upsert: true});
                         }
-
                     })
-
-
                 }
-                else{
+                else {
                     bulk.find({_id: mongoose.Types.ObjectId(profile._doc._id.toString())}).update(
-                        { $set: { 'contacts': profile._doc.contacts } }
+                        {$set: {'api_contacts': profile._doc.contacts, 'phone': profile._doc.phone}}
                     )
                 }
             }
@@ -179,13 +209,19 @@ async function save_new_external_profiles(profiles) {
           }
       });*/
     return new Promise((resolve, reject) => {
-        ExternalUser.insertMany(profiles, function (err, docs) {
-            if (err) {
-                reject(err)
-            } else {
-                resolve(docs)
-            }
-        });
+        try {
+            ExternalUser.insertMany(profiles, function (err, docs) {
+                if (err) {
+                    reject(err)
+                } else {
+                    resolve(docs)
+                }
+            });
+        } catch (err) {
+            console.log(err)
+            reject(err);
+        }
+
     });
 
     // return ExternalUser.insertMany(profiles);
@@ -280,7 +316,11 @@ async function process_upload_numbers(contacts, tenant, company, campaignID, bat
 
 async function get_external_profiles(profile_ids, tenant, company) {
 
-    return ExternalUser.find({company: company, tenant: tenant, '_id': {$in: profile_ids}}).select('phone contacts');
+    return ExternalUser.find({
+        company: company,
+        tenant: tenant,
+        '_id': {$in: profile_ids}
+    }).select('phone api_contacts');
 }
 
 function update_loaded_numbers(CamContactBaseNumberIds) {
