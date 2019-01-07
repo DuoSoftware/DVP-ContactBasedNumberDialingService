@@ -24,85 +24,8 @@ server.use(restify.acceptParser(server.acceptable));
 server.use(restify.queryParser());
 
 server.use(jwt({secret: secret.Secret}));
-
+let dbconn = require('dvp-mongomodels');
 let util = require('util');
-let mongoip=config.Mongo.ip;
-let mongoport=config.Mongo.port;
-let mongodb=config.Mongo.dbname;
-let mongouser=config.Mongo.user;
-let mongopass = config.Mongo.password;
-let mongoreplicaset= config.Mongo.replicaset;
-
-let connectionstring = '';
-
-console.log(mongoip);
-
-mongoip = mongoip.split(',');
-
-console.log(mongoip);
-
-if(util.isArray(mongoip)){
-
-    if(mongoip.length > 1){
-
-        mongoip.forEach(function(item){
-            connectionstring += util.format('%s:%d,',item,mongoport)
-        });
-
-        connectionstring = connectionstring.substring(0, connectionstring.length - 1);
-        connectionstring = util.format('mongodb://%s:%s@%s/%s',mongouser,mongopass,connectionstring,mongodb);
-
-        if(mongoreplicaset){
-            connectionstring = util.format('%s?replicaSet=%s',connectionstring,mongoreplicaset) ;
-        }
-    }else{
-
-        connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip[0],mongoport,mongodb)
-    }
-
-}else{
-
-    connectionstring = util.format('mongodb://%s:%s@%s:%d/%s',mongouser,mongopass,mongoip,mongoport,mongodb)
-}
-
-console.log(connectionstring);
-
-mongoose.connect(connectionstring,{server:{auto_reconnect:true}});
-
-
-mongoose.connection.on('error', function (err) {
-    console.error( new Error(err));
-    mongoose.disconnect();
-
-});
-
-mongoose.connection.on('opening', function() {
-    console.log("reconnecting... %d", mongoose.connection.readyState);
-});
-
-
-mongoose.connection.on('disconnected', function() {
-    console.error( new Error('Could not connect to database'));
-    mongoose.connect(connectionstring,{server:{auto_reconnect:true}});
-});
-
-mongoose.connection.once('open', function() {
-    console.log("Connected to db");
-
-});
-
-
-mongoose.connection.on('reconnected', function () {
-    console.log('MongoDB reconnected!');
-});
-
-
-process.on('SIGINT', function() {
-    mongoose.connection.close(function () {
-        console.log('Mongoose default connection disconnected through app termination');
-        process.exit(0);
-    });
-});
 
 /*{
     "contacts":[{"firstname":"John", "lastname":"Smith","phone":"187078978505654078978","PreviewData":{"loan":"duo","ssn":"werwerwe"}, "contacts":[{"contact": "18705056560","type": "land","display": "18705056560","verified": true}]},
