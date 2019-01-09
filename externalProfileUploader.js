@@ -63,7 +63,7 @@ function build_new_external_profile(contact, tenant, company) {
             created_at: Date.now(),
             updated_at: Date.now(),
             tags: contact.tags,
-            contacts: [],
+            api_contacts: [],
             custom_fields: []
         });
 
@@ -81,7 +81,7 @@ function build_new_external_profile(contact, tenant, company) {
         if (contact.contacts) {
             contact.contacts.map(function (item) {
                 if (item) {
-                    extUser.contacts.push({
+                    extUser.api_contacts.push({
                         contact: item.contact,
                         type: item.type,
                         display: item.display,
