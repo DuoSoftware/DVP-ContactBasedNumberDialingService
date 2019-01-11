@@ -155,7 +155,7 @@ async function update_existing_profile(profiles) {
         let bulk = require('dvp-mongomodels/model/ExternalUser').collection.initializeOrderedBulkOp();
 
         profiles.forEach(function (profile) {
-            if (profile && profile._doc.contacts) {
+            if ((profile && profile._doc.contacts)||(profile._doc.thirdpartyreference)) {
                 if (profile._doc.contacts_update) {
                     profile._doc.contacts.forEach(function (item) {
                         if (item._doc) {
