@@ -357,7 +357,7 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
             where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {DialerStatus: 'added'}],
             offset: offset,
             limit: row_count,
-            attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData']
+            attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData', 'TryCount']
         }).then(function (results) {
             if (results && results.length > 0) {
                 let ids = results.map(function (item) {
