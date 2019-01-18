@@ -357,7 +357,7 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
             where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {DialerStatus: 'added'}],
             offset: offset,
             limit: row_count,
-            attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData', 'TryCount']
+            attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData']
         }).then(function (results) {
             if (results && results.length > 0) {
                 let ids = results.map(function (item) {
@@ -387,6 +387,7 @@ async function get_contact_processer(req, res) {
     if (profile_list) {
         profile_list = profile_list.map(function (item) {
             item._doc.PreviewData = external_profile[item._id.toString()];
+            item._doc.TryCount = 1
             return item;
         })
     }
