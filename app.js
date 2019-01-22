@@ -34,7 +34,7 @@ let util = require('util');
 }*/
 
 server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
-    resource: "campaign",
+    resource: "campaignnumbers",
     action: "write"
 }), function (req, res, next) {
     try {
@@ -50,7 +50,7 @@ server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
 });
 
 server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts/:Status', authorization({
-    resource: "campaign",
+    resource: "campaignnumbers",
     action: "write"
 }), function (req, res, next) {
     try {
@@ -66,7 +66,7 @@ server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts/:Status', authoriza
 });
 
 server.del('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
-    resource: "campaign",
+    resource: "campaignnumbers",
     action: "delete"
 }), function (req, res, next) {
     try {
@@ -82,7 +82,7 @@ server.del('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
 });
 
 server.get('/DVP/API/:version/Campaign/:CampaignID/Contacts/:row_count/:offset', authorization({
-    resource: "campaign",
+    resource: "campaignnumbers",
     action: "write"
 }), function (req, res, next) {
     try {
