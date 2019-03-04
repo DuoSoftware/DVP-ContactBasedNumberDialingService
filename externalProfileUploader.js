@@ -227,7 +227,7 @@ async function save_new_external_profiles(profiles) {
     // return ExternalUser.insertMany(profiles);
 }
 
-async function save_new_contacts(contacts, campaignID, tenant, company, batchNo) {
+async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,scheduleId) {
 
     let nos = [];
 
@@ -242,7 +242,8 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo)
                     CompanyId: company,
                     BatchNo: batchNo ? batchNo : "default",
                     DialerStatus: 'added',
-                    PreviewData: contacts[i]._doc.PreviewData
+                    PreviewData: contacts[i]._doc.PreviewData,
+                    CamScheduleId:scheduleId
                 };
                 nos.push(no);
             }
@@ -287,7 +288,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo)
     );*/
 }
 
-async function process_upload_numbers(contacts, tenant, company, campaignID, batchNo) {
+async function process_upload_numbers(contacts, tenant, company, campaignID, batchNo,scheduleId) {
     let promises = contacts.map((contact) => process_external_profile(contact, tenant, company));
     let results = await Promise.all(promises);
     let profiles = {new_profiles: [], existing_profiles: []};
@@ -306,7 +307,7 @@ async function process_upload_numbers(contacts, tenant, company, campaignID, bat
     if (profiles.existing_profiles.length > 0)
         await update_existing_profile(profiles.existing_profiles);
     let contact_list = profiles.new_profiles.concat(profiles.existing_profiles);
-    let saved_data = await save_new_contacts(contact_list, campaignID, tenant, company, batchNo);
+    let saved_data = await save_new_contacts(contact_list, campaignID, tenant, company, batchNo,scheduleId);
     return saved_data;
 }
 
@@ -466,11 +467,12 @@ module.exports.UploadExternalProfile = function (req, res) {
     let company = parseInt(req.user.company);
     let maxLength = 1000;
 
-    if (req.body && req.body.contacts && req.body.contacts.length <= maxLength) {
+    if (req.body && req.body.contacts && req.body.contacts.length <= maxLength &&  req.body.schedule_id) {
 
         let campaignID = parseInt(req.params.CampaignID);
+        let scheduleId = parseInt(req.params.schedule_id);
         let batchNo = req.body.batchNo;
-        process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo).then(docs => {
+        process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo,scheduleId).then(docs => {
             jsonString = messageFormatter.FormatMessage(null, "All Numbers Uploaded To System", true, docs);
             res.end(jsonString);
         }).catch(error => {
@@ -480,7 +482,7 @@ module.exports.UploadExternalProfile = function (req, res) {
 
     }
     else {
-        jsonString = messageFormatter.FormatMessage(undefined, "To Many Contacts To Upload. Max Limit is " + maxLength, false, undefined);
+        jsonString = messageFormatter.FormatMessage(undefined, "Missing Important data or To Many Contacts To Upload. Max Limit is " + maxLength, false, undefined);
         res.end(jsonString);
     }
 };
