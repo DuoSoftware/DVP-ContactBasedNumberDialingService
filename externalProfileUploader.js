@@ -320,7 +320,7 @@ async function get_external_profiles(profile_ids, tenant, company) {
         company: company,
         tenant: tenant,
         '_id': {$in: profile_ids}
-    }).select('phone api_contacts');
+    }).select('phone api_contacts thirdpartyreference');
 }
 
 function update_loaded_numbers(CamContactBaseNumberIds) {
