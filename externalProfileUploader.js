@@ -345,7 +345,7 @@ function update_loaded_numbers(CamContactBaseNumberIds) {
 
 }
 
-async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant, company) {
+async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant, company,scheduleId) {
     /*return DbConn.CampContactbaseNumbers.findAll({
         where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {Status: 'added'}],
         offset: offset,
@@ -354,8 +354,12 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
     })*/
 
     return new Promise((resolve, reject) => {
+        let condition = [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {DialerStatus: 'added'}];
+        if(scheduleId){
+            condition.push({CamScheduleId:scheduleId})
+        }
         DbConn.CampContactbaseNumbers.findAll({
-            where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {DialerStatus: 'added'}],
+            where: condition,
             offset: offset,
             limit: row_count,
             attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData']
@@ -376,7 +380,7 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
 async function get_contact_processer(req, res) {
     let tenant = parseInt(req.user.tenant);
     let company = parseInt(req.user.company);
-    let contact_list = await get_contact_by_campaign_id(req.params.CampaignID, req.params.offset, req.params.row_count, tenant, company);
+    let contact_list = await get_contact_by_campaign_id(req.params.CampaignID, req.params.offset, req.params.row_count, tenant, company,req.params.scheduleId);
     let external_profile_ids = [];
     let external_profile = {};
     contact_list.forEach(function (item) {
