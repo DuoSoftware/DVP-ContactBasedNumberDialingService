@@ -471,12 +471,12 @@ module.exports.UploadExternalProfile = function (req, res) {
     let company = parseInt(req.user.company);
     let maxLength = 1000;
 
-    if (req.body && req.body.contacts && req.body.contacts.length <= maxLength &&  req.body.schedule_id) {
+    if (req.body && req.body.contacts && req.body.contacts.length <= maxLength ) {
 
         let campaignID = parseInt(req.params.CampaignID);
-        let scheduleId = parseInt(req.params.schedule_id);
+
         let batchNo = req.body.batchNo;
-        process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo,scheduleId).then(docs => {
+        process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo,req.params.schedule_id).then(docs => {
             jsonString = messageFormatter.FormatMessage(null, "All Numbers Uploaded To System", true, docs);
             res.end(jsonString);
         }).catch(error => {
