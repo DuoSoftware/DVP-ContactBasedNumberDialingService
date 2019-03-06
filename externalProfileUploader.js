@@ -15,31 +15,35 @@ let ObjectId = Schema.ObjectId;
 /*---------------------- number Upload -------------------------------------*/
 
 function validate_external_profile(contact, tenant, company) {
-    let condition = contact.thirdpartyreference?{thirdpartyreference: contact.thirdpartyreference, company: company, tenant: tenant}:{phone: contact.phone, company: company, tenant: tenant};
+    let condition = contact.thirdpartyreference ? {
+        thirdpartyreference: contact.thirdpartyreference,
+        company: company,
+        tenant: tenant
+    } : {phone: contact.phone, company: company, tenant: tenant};
     return ExternalUser.findOne(condition);
 
-   /* return new Promise((resolve, reject) => {
-        let condition = contact.thirdpartyreference ? {
-            thirdpartyreference: contact.thirdpartyreference,
-            company: company,
-            tenant: tenant
-        } : {phone: contact.phone, company: company, tenant: tenant};
-        ExternalUser.findOne(condition, function (err, obj) {
-            if (err) {
-                reject(err);
-            } else if (obj === null && contact.thirdpartyreference) {
-                ExternalUser.findOne({phone: contact.phone, company: company, tenant: tenant}, function (err, obj) {
-                    if (err) {
-                        reject(err);
-                    }  else {
-                        resolve(obj === null?obj:{});
-                    }
-                });
-            } else {
-                resolve(obj)
-            }
-        });
-    });*/
+    /* return new Promise((resolve, reject) => {
+         let condition = contact.thirdpartyreference ? {
+             thirdpartyreference: contact.thirdpartyreference,
+             company: company,
+             tenant: tenant
+         } : {phone: contact.phone, company: company, tenant: tenant};
+         ExternalUser.findOne(condition, function (err, obj) {
+             if (err) {
+                 reject(err);
+             } else if (obj === null && contact.thirdpartyreference) {
+                 ExternalUser.findOne({phone: contact.phone, company: company, tenant: tenant}, function (err, obj) {
+                     if (err) {
+                         reject(err);
+                     }  else {
+                         resolve(obj === null?obj:{});
+                     }
+                 });
+             } else {
+                 resolve(obj)
+             }
+         });
+     });*/
 
 }
 
@@ -155,7 +159,7 @@ async function update_existing_profile(profiles) {
         let bulk = require('dvp-mongomodels/model/ExternalUser').collection.initializeOrderedBulkOp();
 
         profiles.forEach(function (profile) {
-            if ((profile && profile._doc.contacts)||(profile._doc.thirdpartyreference)) {
+            if ((profile && profile._doc.contacts) || (profile._doc.thirdpartyreference)) {
                 if (profile._doc.contacts_update) {
                     profile._doc.contacts.forEach(function (item) {
                         if (item._doc) {
@@ -227,10 +231,14 @@ async function save_new_external_profiles(profiles) {
     // return ExternalUser.insertMany(profiles);
 }
 
-async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,scheduleId) {
+async function save_new_contacts(contacts, campaignID, tenant, company, batchNo, scheduleId) {
 
     let nos = [];
-
+    try {
+        scheduleId = parseInt(scheduleId);
+    } catch (ex) {
+        console.error(ex);
+    }
     if (contacts) {
         for (let i = 0; i < contacts.length; i++) {
             if (contacts[i]) {
@@ -243,7 +251,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
                     BatchNo: batchNo ? batchNo : "default",
                     DialerStatus: 'added',
                     PreviewData: contacts[i]._doc.PreviewData,
-                    CamScheduleId:scheduleId
+                    CamScheduleId: scheduleId
                 };
                 nos.push(no);
             }
@@ -288,7 +296,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
     );*/
 }
 
-async function process_upload_numbers(contacts, tenant, company, campaignID, batchNo,scheduleId) {
+async function process_upload_numbers(contacts, tenant, company, campaignID, batchNo, scheduleId) {
     let promises = contacts.map((contact) => process_external_profile(contact, tenant, company));
     let results = await Promise.all(promises);
     let profiles = {new_profiles: [], existing_profiles: []};
@@ -307,7 +315,7 @@ async function process_upload_numbers(contacts, tenant, company, campaignID, bat
     if (profiles.existing_profiles.length > 0)
         await update_existing_profile(profiles.existing_profiles);
     let contact_list = profiles.new_profiles.concat(profiles.existing_profiles);
-    let saved_data = await save_new_contacts(contact_list, campaignID, tenant, company, batchNo,scheduleId);
+    let saved_data = await save_new_contacts(contact_list, campaignID, tenant, company, batchNo, scheduleId);
     return saved_data;
 }
 
@@ -345,7 +353,7 @@ function update_loaded_numbers(CamContactBaseNumberIds) {
 
 }
 
-async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant, company,scheduleId) {
+async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant, company, scheduleId) {
     /*return DbConn.CampContactbaseNumbers.findAll({
         where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {Status: 'added'}],
         offset: offset,
@@ -355,8 +363,8 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
 
     return new Promise((resolve, reject) => {
         let condition = [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {DialerStatus: 'added'}];
-        if(scheduleId){
-            condition.push({CamScheduleId:scheduleId})
+        if (scheduleId) {
+            condition.push({CamScheduleId: scheduleId})
         }
         DbConn.CampContactbaseNumbers.findAll({
             where: condition,
@@ -380,7 +388,7 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
 async function get_contact_processer(req, res) {
     let tenant = parseInt(req.user.tenant);
     let company = parseInt(req.user.company);
-    let contact_list = await get_contact_by_campaign_id(req.params.CampaignID, req.params.offset, req.params.row_count, tenant, company,req.params.scheduleId);
+    let contact_list = await get_contact_by_campaign_id(req.params.CampaignID, req.params.offset, req.params.row_count, tenant, company, req.params.scheduleId);
     let external_profile_ids = [];
     let external_profile = {};
     contact_list.forEach(function (item) {
@@ -471,12 +479,12 @@ module.exports.UploadExternalProfile = function (req, res) {
     let company = parseInt(req.user.company);
     let maxLength = 1000;
 
-    if (req.body && req.body.contacts && req.body.contacts.length <= maxLength ) {
+    if (req.body && req.body.contacts && req.body.contacts.length <= maxLength) {
 
         let campaignID = parseInt(req.params.CampaignID);
 
         let batchNo = req.body.batchNo;
-        process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo,req.params.schedule_id).then(docs => {
+        process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo, req.params.schedule_id).then(docs => {
             jsonString = messageFormatter.FormatMessage(null, "All Numbers Uploaded To System", true, docs);
             res.end(jsonString);
         }).catch(error => {
