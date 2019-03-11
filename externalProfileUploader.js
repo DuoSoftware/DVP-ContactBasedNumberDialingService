@@ -235,8 +235,13 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
 
     let nos = [];
     try {
-        if(scheduleId)
-        scheduleId = parseInt(scheduleId);
+        if (scheduleId) {
+            scheduleId = parseInt(scheduleId);
+        }
+        else {
+
+            console.error("Upload Without scheduleId")
+        }
     } catch (ex) {
         console.error(ex);
     }
