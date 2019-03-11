@@ -235,6 +235,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
 
     let nos = [];
     try {
+        if(scheduleId)
         scheduleId = parseInt(scheduleId);
     } catch (ex) {
         console.error(ex);
