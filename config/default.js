@@ -4,7 +4,7 @@ module.exports = {
             "resource": "cluster",
             "vdomain": "localhost",
             "domain": "localhost",
-            "port": "2626",
+            "port": "2627",
             "version": "1.0.0.0"
         },
     "DB": {

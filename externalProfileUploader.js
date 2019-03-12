@@ -3,6 +3,7 @@
  */
 
 let logger = require('dvp-common/LogHandler/CommonLogHandler.js').logger;
+let consolelogger = require('./console_log_handler');
 let ExternalUser = require('dvp-mongomodels/model/ExternalUser');
 let bulk = require('dvp-mongomodels/model/ExternalUser').collection.initializeOrderedBulkOp();
 //let People = require("./models/people").collection.initializeOrderedBulkOp();
@@ -222,7 +223,7 @@ async function save_new_external_profiles(profiles) {
                 }
             });
         } catch (err) {
-            console.log(err)
+            consolelogger.log_message(consolelogger.loglevels.error,err);
             reject(err);
         }
 
@@ -239,8 +240,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
             scheduleId = parseInt(scheduleId);
         }
         else {
-
-            console.error("Upload Without scheduleId")
+            consolelogger.log_message(consolelogger.loglevels.error,"Upload Without scheduleId");
         }
     } catch (ex) {
         console.error(ex);
@@ -287,6 +287,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
         ).then(function (results) {
             resolve(results);
         }).catch(function (err) {
+            consolelogger.log_message(consolelogger.loglevels.error,"Bulk Upload Error");
             reject(err)
         });
     });
@@ -487,19 +488,28 @@ module.exports.UploadExternalProfile = function (req, res) {
 
     if (req.body && req.body.contacts && req.body.contacts.length <= maxLength) {
 
-        let campaignID = parseInt(req.params.CampaignID);
+        try{
 
-        let batchNo = req.body.batchNo;
-        process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo, req.params.schedule_id).then(docs => {
-            jsonString = messageFormatter.FormatMessage(null, "All Numbers Uploaded To System", true, docs);
+            let campaignID = parseInt(req.params.CampaignID);
+            let batchNo = req.body.batchNo;
+            process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo, req.params.schedule_id).then(docs => {
+                jsonString = messageFormatter.FormatMessage(null, "All Numbers Uploaded To System", true, docs);
+                res.end(jsonString);
+            }).catch(error => {
+                consolelogger.log_message(consolelogger.loglevels.error,error);
+                jsonString = messageFormatter.FormatMessage(error, "All Non Duplicate Numbers Uploaded To System", false, null);
+                res.end(jsonString);
+            });
+        }catch (ex){
+            consolelogger.log_message(consolelogger.loglevels.error,ex);
+            jsonString = messageFormatter.FormatMessage(ex, "process_upload_numbers error" , false, undefined);
             res.end(jsonString);
-        }).catch(error => {
-            jsonString = messageFormatter.FormatMessage(error, "All Non Duplicate Numbers Uploaded To System", false, null);
-            res.end(jsonString);
-        });
+        }
+
 
     }
     else {
+        consolelogger.log_message(consolelogger.loglevels.error,"Missing Important data or To Many Contacts To Upload");
         jsonString = messageFormatter.FormatMessage(undefined, "Missing Important data or To Many Contacts To Upload. Max Limit is " + maxLength, false, undefined);
         res.end(jsonString);
     }
