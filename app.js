@@ -83,11 +83,43 @@ server.del('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
 
 server.get('/DVP/API/:version/Campaign/:CampaignID/Contacts/:row_count/:offset', authorization({
     resource: "campaignnumbers",
-    action: "write"
+    action: "read"
 }), function (req, res, next) {
     try {
         logger.info('GetContactsByCampaign');
         externalProfileUploader.GetContactsByCampaign(req,res);
+    }
+    catch (ex) {
+        let jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('GetContactsByCampaign : %s ', jsonString);
+        res.end(jsonString);
+    }
+    return next();
+});
+
+server.get('/DVP/API/:version/Campaign/ProfilesCount', authorization({
+    resource: "campaignnumbers",
+    action: "read"
+}), function (req, res, next) {
+    try {
+        logger.info('GetContactsByCampaign');
+        externalProfileUploader.ProfilesCount(req,res);
+    }
+    catch (ex) {
+        let jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('GetContactsByCampaign : %s ', jsonString);
+        res.end(jsonString);
+    }
+    return next();
+});
+
+server.get('/DVP/API/:version/Campaign/ProfileContactsCount', authorization({
+    resource: "campaignnumbers",
+    action: "read"
+}), function (req, res, next) {
+    try {
+        logger.info('GetContactsByCampaign');
+        externalProfileUploader.ProfileContactsCount(req,res);
     }
     catch (ex) {
         let jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);

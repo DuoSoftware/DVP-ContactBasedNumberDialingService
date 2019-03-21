@@ -12,6 +12,35 @@ let DbConn = require('dvp-dbmodels');
 let mongoose = require('mongoose');
 let Schema = mongoose.Schema;
 let ObjectId = Schema.ObjectId;
+let redis_handler = require('./redis_handler');
+let format = require('stringformat');
+
+
+function process_counters(tenant, company, campaignID, scheduleId, profile_count, profile_contact_count) {
+    try {
+        let key1 = format("TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
+        let key2 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILES", tenant, company, campaignID);
+        let key3 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILES", tenant, company, campaignID, scheduleId);
+
+        let key4 = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
+        let key5 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILESCONTACTS", tenant, company, campaignID);
+        let key6 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILESCONTACTS", tenant, company, campaignID, scheduleId);
+
+        let profile_keys = [key1, key2, key3];
+        let profile_contact_keys = [key4, key5, key6];
+
+        profile_keys.forEach(function (key) {
+            redis_handler.incrby(key, profile_count);
+        });
+
+        profile_contact_keys.forEach(function (key) {
+            redis_handler.incrby(key, profile_contact_count);
+        });
+    } catch (ex) {
+        logger.error('contact upload - REDIS ERROR', ex);
+        consolelogger.log_message(consolelogger.loglevels.error, ex);
+    }
+}
 
 /*---------------------- number Upload -------------------------------------*/
 
@@ -223,7 +252,7 @@ async function save_new_external_profiles(profiles) {
                 }
             });
         } catch (err) {
-            consolelogger.log_message(consolelogger.loglevels.error,err);
+            consolelogger.log_message(consolelogger.loglevels.error, err);
             reject(err);
         }
 
@@ -240,13 +269,16 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
             scheduleId = parseInt(scheduleId);
         }
         else {
-            consolelogger.log_message(consolelogger.loglevels.error,"Upload Without scheduleId");
+            consolelogger.log_message(consolelogger.loglevels.error, "Upload Without scheduleId");
         }
     } catch (ex) {
         console.error(ex);
     }
+    let profile_count = 0;
+    let profile_contact_count = 0;
     if (contacts) {
-        for (let i = 0; i < contacts.length; i++) {
+        profile_count = contacts.length;
+        for (let i = 0; i < profile_count; i++) {
             if (contacts[i]) {
                 let no = {
                     ExternalUserID: contacts[i]._doc._id.toString(),
@@ -260,6 +292,7 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
                     CamScheduleId: scheduleId
                 };
                 nos.push(no);
+                profile_contact_count = profile_contact_count + (contacts[i]._doc.contacts ? contacts[i]._doc.contacts.length : 0);
             }
 
         }
@@ -281,13 +314,15 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
     });
 */
 
+
+    process_counters(tenant, company, campaignID, scheduleId, profile_count, profile_contact_count);
     return new Promise((resolve, reject) => {
         DbConn.CampContactbaseNumbers.bulkCreate(
             nos, {validate: false, individualHooks: true, ignoreDuplicates: true}
         ).then(function (results) {
             resolve(results);
         }).catch(function (err) {
-            consolelogger.log_message(consolelogger.loglevels.error,"Bulk Upload Error");
+            consolelogger.log_message(consolelogger.loglevels.error, "Bulk Upload Error");
             reject(err)
         });
     });
@@ -488,7 +523,7 @@ module.exports.UploadExternalProfile = function (req, res) {
 
     if (req.body && req.body.contacts && req.body.contacts.length <= maxLength) {
 
-        try{
+        try {
 
             let campaignID = parseInt(req.params.CampaignID);
             let batchNo = req.body.batchNo;
@@ -496,20 +531,20 @@ module.exports.UploadExternalProfile = function (req, res) {
                 jsonString = messageFormatter.FormatMessage(null, "All Numbers Uploaded To System", true, docs);
                 res.end(jsonString);
             }).catch(error => {
-                consolelogger.log_message(consolelogger.loglevels.error,error);
+                consolelogger.log_message(consolelogger.loglevels.error, error);
                 jsonString = messageFormatter.FormatMessage(error, "All Non Duplicate Numbers Uploaded To System", false, null);
                 res.end(jsonString);
             });
-        }catch (ex){
-            consolelogger.log_message(consolelogger.loglevels.error,ex);
-            jsonString = messageFormatter.FormatMessage(ex, "process_upload_numbers error" , false, undefined);
+        } catch (ex) {
+            consolelogger.log_message(consolelogger.loglevels.error, ex);
+            jsonString = messageFormatter.FormatMessage(ex, "process_upload_numbers error", false, undefined);
             res.end(jsonString);
         }
 
 
     }
     else {
-        consolelogger.log_message(consolelogger.loglevels.error,"Missing Important data or To Many Contacts To Upload");
+        consolelogger.log_message(consolelogger.loglevels.error, "Missing Important data or To Many Contacts To Upload");
         jsonString = messageFormatter.FormatMessage(undefined, "Missing Important data or To Many Contacts To Upload. Max Limit is " + maxLength, false, undefined);
         res.end(jsonString);
     }
@@ -584,4 +619,43 @@ module.exports.DeleteContacts = function (req, res) {
         jsonString = messageFormatter.FormatMessage(undefined, "Missing some important parameters", false, undefined);
         res.end(jsonString);
     }
+};
+
+
+module.exports.ProfilesCount = function (req, res) {
+    let jsonString;
+    let tenant = req.user.tenant;
+    let company = req.user.company;
+    let key = format("TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
+    if (req.params.CampaignID)
+        key = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILES", tenant, company, req.params.CampaignID);
+    if (req.params.CampaignID && req.params.ScheduleID)
+        key = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILES", tenant, company, req.params.CampaignID, req.params.ScheduleID);
+
+    redis_handler.get_value(key).then(response => {
+        jsonString = messageFormatter.FormatMessage(undefined, "ProfilesCount", true, response);
+        res.end(jsonString);
+    }).catch((error => {
+        jsonString = messageFormatter.FormatMessage(error, "Fail To Get Profile count", false, null);
+        res.end(jsonString);
+    }));
+};
+
+module.exports.ProfileContactsCount = function (req, res) {
+    let jsonString;
+
+    let tenant = req.user.tenant;
+    let company = req.user.company;
+    let key = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
+    if (req.params.CampaignID)
+        key = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILESCONTACTS", tenant, company, req.params.CampaignID);
+    if (req.params.CampaignID && req.params.ScheduleID)
+        key = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILESCONTACTS", tenant, company, req.params.CampaignID, req.params.ScheduleID);
+    redis_handler.get_value(key).then(response => {
+        jsonString = messageFormatter.FormatMessage(undefined, "ProfileContactsCount", true, response);
+        res.end(jsonString);
+    }).catch((error => {
+        jsonString = messageFormatter.FormatMessage(error, "Fail To Get Profile Contacts Count", false, null);
+        res.end(jsonString);
+    }));
 };
