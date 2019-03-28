@@ -18,6 +18,7 @@ let format = require('stringformat');
 
 function process_counters(tenant, company, campaignID, scheduleId, profile_count, profile_contact_count) {
     try {
+        profile_contact_count = profile_contact_count+ 1;
         let key1 = format("TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
         let key2 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILES", tenant, company, campaignID);
         let key3 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILES", tenant, company, campaignID, scheduleId);
