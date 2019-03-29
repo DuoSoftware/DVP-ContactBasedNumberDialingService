@@ -14,18 +14,82 @@ let Schema = mongoose.Schema;
 let ObjectId = Schema.ObjectId;
 let redis_handler = require('./redis_handler');
 let format = require('stringformat');
+let notificationService = require('./notificationService');
 
+let getCount = function (tenant, company, businessUnit, window, param1, param2) {
+    return new Promise((resolve, reject) => {
+        try {
+
+            let totalCountSearch = format("TOTALCOUNT:{0}:{1}:{2}", tenant, company, window);
+            if (param1)
+                totalCountSearch = format("TOTALCOUNT:{0}:{1}:{2}:CAMPAIGN:{3}", tenant, company, window, param1);
+            if (param1 && param2)
+                totalCountSearch = format("TOTALCOUNT:{0}:{1}:{2}:CAMPAIGN:{3}:SCHEDULE:{4}", tenant, company, window, param1, param2);
+
+            redis_handler.get_value(totalCountSearch).then(function (result) {
+                resolve(result);
+            }).catch(function (err) {
+                resolve(-1);
+            });
+        } catch (err) {
+            consolelogger.log_message(consolelogger.loglevels.error, err);
+            reject(err);
+        }
+
+    });
+};
+
+
+let get_dashborad_data = function (company, tenant, businessUnit, window, eventName, param1, param2) {
+
+
+    let counts = [getCount(tenant, company, businessUnit, window, null, null),
+        getCount(tenant, company, businessUnit, window, param1, null),
+        getCount(tenant, company, businessUnit, window, param1, param2)];
+
+    return Promise.all(counts).then(results => {
+
+        let reply = {
+            roomData: {roomName: window + ':' + eventName, eventName: eventName},
+            DashboardData: {
+                businessUnit: "*",
+                window: window,
+                param1: param1,
+                param2: param2,
+                TotalCountWindow: results[0],
+                TotalCountParam1: results[1],
+                TotalCountParam2: results[2],
+                TotalCountAllParams: results[0]
+            }
+        };
+
+        let postData = {message: reply.DashboardData, From: 'contactnumberupload'};
+        notificationService.RequestToNotify(company, tenant, reply.roomData.roomName, reply.roomData.eventName, postData);
+    });
+
+};
+
+function send_notification(company, tenant, campaignID, scheduleId) {
+    try {
+        Promise.all([get_dashborad_data(company, tenant, "*", "PROFILES", "PROFILESCOUNT", campaignID, scheduleId), get_dashborad_data(company, tenant, "*", "PROFILESCONTACTS", "PROFILESCONTACTSCOUNT", campaignID, scheduleId)]).then(results => {
+            consolelogger.log_message(consolelogger.loglevels.info, "Notification Send");
+        })
+
+    } catch (ex) {
+        console.error(ex);
+    }
+}
 
 function process_counters(tenant, company, campaignID, scheduleId, profile_count, profile_contact_count) {
     try {
-        profile_contact_count = profile_contact_count+ 1;
+        profile_contact_count = profile_contact_count + 1;
         let key1 = format("TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
-        let key2 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILES", tenant, company, campaignID);
-        let key3 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILES", tenant, company, campaignID, scheduleId);
+        let key2 = format("TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}", tenant, company, campaignID);
+        let key3 = format("TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, campaignID, scheduleId);
 
         let key4 = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
-        let key5 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILESCONTACTS", tenant, company, campaignID);
-        let key6 = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILESCONTACTS", tenant, company, campaignID, scheduleId);
+        let key5 = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}", tenant, company, campaignID);
+        let key6 = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, campaignID, scheduleId);
 
         let profile_keys = [key1, key2, key3];
         let profile_contact_keys = [key4, key5, key6];
@@ -37,6 +101,8 @@ function process_counters(tenant, company, campaignID, scheduleId, profile_count
         profile_contact_keys.forEach(function (key) {
             redis_handler.incrby(key, profile_contact_count);
         });
+
+        send_notification(company, tenant, campaignID, scheduleId);
     } catch (ex) {
         logger.error('contact upload - REDIS ERROR', ex);
         consolelogger.log_message(consolelogger.loglevels.error, ex);

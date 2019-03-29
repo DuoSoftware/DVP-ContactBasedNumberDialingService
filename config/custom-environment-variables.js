@@ -68,39 +68,9 @@ module.exports = {
     },
     "Services" : {
         "accessToken": "HOST_TOKEN",
-        "resourceServiceHost": "SYS_RESOURCESERVICE_HOST",
-        "resourceServicePort": "SYS_RESOURCESERVICE_PORT",
-        "resourceServiceVersion": "SYS_RESOURCESERVICE_VERSION",
-        "sipuserendpointserviceHost": "SYS_SIPUSERENDPOINTSERVICE_HOST",
-        "sipuserendpointservicePort": "SYS_SIPUSERENDPOINTSERVICE_PORT",
-        "sipuserendpointserviceVersion": "SYS_SIPUSERENDPOINTSERVICE_VERSION",
-        "ruleserviceHost": "SYS_RULESERVICE_HOST",
-        "ruleservicePort": "SYS_RULESERVICE_PORT",
-        "ruleserviceVersion": "SYS_RULESERVICE_VERSION",
-        "fileserviceHost": "SYS_FILESERVICE_HOST",
-        "fileservicePort": "SYS_FILESERVICE_PORT",
-        "fileserviceVersion": "SYS_FILESERVICE_VERSION",
-        "liteticketHost": "SYS_LITETICKET_HOST",
-        "liteticketPort": "SYS_LITETICKET_PORT",
-        "liteticketVersion": "SYS_LITETICKET_VERSION",
-        "clusterconfigserviceHost": "SYS_CLUSTERCONFIG_HOST",
-        "clusterconfigservicePort": "SYS_CLUSTERCONFIG_PORT",
-        "clusterconfigserviceVersion": "SYS_CLUSTERCONFIG_VERSION",
-        "billingserviceHost": "SYS_BILLINGSERVICE_HOST",
-        "billingservicePort": "SYS_BILLINGSERVICE_PORT",
-        "billingserviceVersion": "SYS_BILLINGSERVICE_VERSION"
-    },
-
-    "Tenant": {
-        "activeTenant": "ACTIVE_TENANT",
-        "activeCompany": "ACTIVE_COMPANY"
-    },
-
-    "ClusterName": "HOST_CLUSTER_NAME",
-    "Provision": "HOST_PROVISION_MECHANISM",
-
-    "ActiveDirectory": {
-        "groupName": "AD_GROUPNAME"
+        "notificationServiceHost": "SYS_NOTIFICATIONSERVICE_HOST",
+        "notificationServicePort": "SYS_NOTIFICATIONSERVICE_PORT",
+        "notificationServiceVersion": "SYS_NOTIFICATIONSERVICE_VERSION"
     }
 };
 
