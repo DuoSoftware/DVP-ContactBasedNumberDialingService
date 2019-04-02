@@ -46,9 +46,9 @@ module.exports.RequestToNotify = function (company, tenant, roomName, eventName,
 
             }else{
                 if(res1.statusCode === 200) {
-                    logger.info('Do Post: Success');
+                    logger.info('Do Post: Success ' +roomName +" : " +eventName);
                 }else{
-                    logger.info('Do Post: Failed');
+                    logger.info('Do Post: Failed '+roomName +" : " +eventName);
                 }
             }
         });
