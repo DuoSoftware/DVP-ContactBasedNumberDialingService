@@ -20,11 +20,11 @@ let getCount = function (tenant, company, businessUnit, window, param1, param2) 
     return new Promise((resolve, reject) => {
         try {
 
-            let totalCountSearch = format("TOTALCOUNT:{0}:{1}:{2}", tenant, company, window);
+            let totalCountSearch = format("CAM_TOTALCOUNT:{0}:{1}:{2}", tenant, company, window);
             if (param1)
-                totalCountSearch = format("TOTALCOUNT:{0}:{1}:{2}:CAMPAIGN:{3}", tenant, company, window, param1);
+                totalCountSearch = format("CAM_TOTALCOUNT:{0}:{1}:{2}:CAMPAIGN:{3}", tenant, company, window, param1);
             if (param1 && param2)
-                totalCountSearch = format("TOTALCOUNT:{0}:{1}:{2}:CAMPAIGN:{3}:SCHEDULE:{4}", tenant, company, window, param1, param2);
+                totalCountSearch = format("CAM_TOTALCOUNT:{0}:{1}:{2}:CAMPAIGN:{3}:SCHEDULE:{4}", tenant, company, window, param1, param2);
 
             redis_handler.get_value(totalCountSearch).then(function (result) {
                 resolve(result);
@@ -83,13 +83,13 @@ function send_notification(company, tenant, campaignID, scheduleId) {
 function process_counters(tenant, company, campaignID, scheduleId, profile_count, profile_contact_count) {
     try {
         profile_contact_count = profile_contact_count + 1;
-        let key1 = format("TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
-        let key2 = format("TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}", tenant, company, campaignID);
-        let key3 = format("TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, campaignID, scheduleId);
+        let key1 = format("CAM_TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
+        let key2 = format("CAM_TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}", tenant, company, campaignID);
+        let key3 = format("CAM_TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, campaignID, scheduleId);
 
-        let key4 = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
-        let key5 = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}", tenant, company, campaignID);
-        let key6 = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, campaignID, scheduleId);
+        let key4 = format("CAM_TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
+        let key5 = format("CAM_TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}", tenant, company, campaignID);
+        let key6 = format("CAM_TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, campaignID, scheduleId);
 
         let profile_keys = [key1, key2, key3];
         let profile_contact_keys = [key4, key5, key6];
@@ -693,11 +693,11 @@ module.exports.ProfilesCount = function (req, res) {
     let jsonString;
     let tenant = req.user.tenant;
     let company = req.user.company;
-    let key = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
+    let key = format("CAM_TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
     if (req.params.CampaignID)
-        key = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}", tenant, company, req.params.CampaignID);
+        key = format("CAM_TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}", tenant, company, req.params.CampaignID);
     if (req.params.CampaignID && req.params.ScheduleID)
-        key = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, req.params.CampaignID, req.params.ScheduleID);
+        key = format("CAM_TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, req.params.CampaignID, req.params.ScheduleID);
 
     redis_handler.get_value(key).then(response => {
         jsonString = messageFormatter.FormatMessage(undefined, "ProfilesCount", true, response);
@@ -713,11 +713,11 @@ module.exports.ProfileContactsCount = function (req, res) {
 
     let tenant = req.user.tenant;
     let company = req.user.company;
-    let key = format("TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
+    let key = format("CAM_TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
     if (req.params.CampaignID)
-        key = format("TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}", tenant, company, req.params.CampaignID);
+        key = format("CAM_TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}", tenant, company, req.params.CampaignID);
     if (req.params.CampaignID && req.params.ScheduleID)
-        key = format("TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, req.params.CampaignID, req.params.ScheduleID);
+        key = format("CAM_TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, req.params.CampaignID, req.params.ScheduleID);
     redis_handler.get_value(key).then(response => {
         jsonString = messageFormatter.FormatMessage(undefined, "ProfileContactsCount", true, response);
         res.end(jsonString);
