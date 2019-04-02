@@ -689,7 +689,7 @@ module.exports.DeleteContacts = function (req, res) {
 };
 
 
-module.exports.ProfilesCount = function (req, res) {
+module.exports.ProfileContactsCount = function (req, res) {
     let jsonString;
     let tenant = req.user.tenant;
     let company = req.user.company;
@@ -708,7 +708,7 @@ module.exports.ProfilesCount = function (req, res) {
     }));
 };
 
-module.exports.ProfileContactsCount = function (req, res) {
+module.exports.ProfilesCount = function (req, res) {
     let jsonString;
 
     let tenant = req.user.tenant;

@@ -92,13 +92,14 @@ module.exports.incrby = function (key, value) {
 
     return new Promise((resolve, reject) => {
         try {
-            client.incrby(key, value, function (err, response) {
+            client.incrby(key,parseInt(value), function (err, response) {
 
                 if (err) {
                     logger.error('contact upload - REDIS ERROR', err);
                     consolelogger.log_message(consolelogger.loglevels.error, err);
                     reject(err)
                 }
+                consolelogger.log_message(consolelogger.loglevels.info, response);
                 resolve(response)
             });
         } catch (err) {
