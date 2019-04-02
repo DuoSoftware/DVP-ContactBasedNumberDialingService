@@ -693,11 +693,11 @@ module.exports.ProfilesCount = function (req, res) {
     let jsonString;
     let tenant = req.user.tenant;
     let company = req.user.company;
-    let key = format("TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
+    let key = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
     if (req.params.CampaignID)
-        key = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILES", tenant, company, req.params.CampaignID);
+        key = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}", tenant, company, req.params.CampaignID);
     if (req.params.CampaignID && req.params.ScheduleID)
-        key = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILES", tenant, company, req.params.CampaignID, req.params.ScheduleID);
+        key = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, req.params.CampaignID, req.params.ScheduleID);
 
     redis_handler.get_value(key).then(response => {
         jsonString = messageFormatter.FormatMessage(undefined, "ProfilesCount", true, response);
@@ -713,11 +713,11 @@ module.exports.ProfileContactsCount = function (req, res) {
 
     let tenant = req.user.tenant;
     let company = req.user.company;
-    let key = format("TOTALCOUNT:{0}:{1}:PROFILESCONTACTS", tenant, company);
+    let key = format("TOTALCOUNT:{0}:{1}:PROFILES", tenant, company);
     if (req.params.CampaignID)
-        key = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:PROFILESCONTACTS", tenant, company, req.params.CampaignID);
+        key = format("TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}", tenant, company, req.params.CampaignID);
     if (req.params.CampaignID && req.params.ScheduleID)
-        key = format("TOTALCOUNT:{0}:{1}:CAMPAIGN:{2}:SCHEDULE:{3}:PROFILESCONTACTS", tenant, company, req.params.CampaignID, req.params.ScheduleID);
+        key = format("TOTALCOUNT:{0}:{1}:PROFILES:CAMPAIGN:{2}:SCHEDULE:{3}", tenant, company, req.params.CampaignID, req.params.ScheduleID);
     redis_handler.get_value(key).then(response => {
         jsonString = messageFormatter.FormatMessage(undefined, "ProfileContactsCount", true, response);
         res.end(jsonString);
