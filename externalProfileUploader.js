@@ -552,32 +552,68 @@ async function UpdateContactStatus(req, res) {
 
 }
 
-async function DeleteContacts(req, res) {
+function get_external_profile_ids(tenant, company, third_party_references, primary_phone_nos) {
+
+    let condition = {
+        company: company,
+        tenant: tenant
+    };
+
+    if (Array.isArray(third_party_references) && Array.isArray(primary_phone_nos)) {
+        condition = {
+            company: company,
+            tenant: tenant,
+            $or: [{'thirdpartyreference': {$in: third_party_references}}, {'phone': {$in: primary_phone_nos}}]
+        }
+
+
+    } else if (Array.isArray(third_party_references)) {
+        condition.thirdpartyreference = {$in: third_party_references}
+    } else if (Array.isArray(primary_phone_nos)) {
+        condition.phone = {$in: primary_phone_nos}
+    }
+
+    return ExternalUser.find(condition).select('_id');//.distinct('_id');
+}
+
+async function DeleteContacts(req) {
     let tenant = parseInt(req.user.tenant);
     let company = parseInt(req.user.company);
     let campaign_id = req.params.CampaignID;
 
-    let condition = [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}];
-    let Contacts = req.body.Contacts;
-    if (Contacts) {
-        if (Array.isArray(Contacts))
-            condition.push({CamContactBaseNumberId: {$in: Contacts}});
-        else
-            condition.push({CamContactBaseNumberId: Contacts});
-    }
+    let third_party_references = req.body.ThirdPartyReferences;
+    let primary_phone_nos = req.body.PrimaryPhoneNos;
 
+    let profiles = await get_external_profile_ids(tenant, company, third_party_references, primary_phone_nos);
 
     return new Promise((resolve, reject) => {
-        DbConn.CampContactbaseNumbers.destroy(
-            {
-                where: condition
+        if (profiles) {
+            let ids = profiles.map(function (item) {
+                return item._doc._id.toString();
+            });
+
+            let condition = [{ExternalUserID: {$in: ids}}];
+            if (campaign_id !== "-999") {
+                condition.push({CampaignId: campaign_id});
             }
-        ).then(function (results) {
-            resolve(results);
-        }).catch(function (err) {
-            reject(err)
-        });
+            DbConn.CampContactbaseNumbers.update({
+                    DialerStatus: "removed_by_api"
+                },
+                {
+                    where: condition
+                }
+            ).then(function (results) {
+                resolve(results);
+            }).catch(function (err) {
+                reject(err)
+            });
+
+
+        } else {
+            reject(new Error("No Files Found"))
+        }
     });
+
 
 }
 
@@ -673,19 +709,32 @@ module.exports.UpdateContactStatus = function (req, res) {
 
 module.exports.DeleteContacts = function (req, res) {
     let jsonString;
+    try {
+        let third_party_references = req.body.ThirdPartyReferences;
+        let primary_phone_nos = req.body.PrimaryPhoneNos;
+        if (req.params.CampaignID && (Array.isArray(third_party_references) || Array.isArray(primary_phone_nos))) {
 
-    if (req.params.CampaignID && req.body && req.body.Contacts) {
-        DeleteContacts(req, res).then(profiles => {
-            jsonString = messageFormatter.FormatMessage(undefined, "DeleteContacts", true, profiles);
+            //Array.isArray(third_party_references) && Array.isArray(primary_phone_nos)
+            DeleteContacts(req).then(profiles => {
+                jsonString = messageFormatter.FormatMessage(new Error("Invalid Profile/campaign Ids"), "DeleteContacts", false, profiles[0]);
+                if(profiles[0]>0){
+                    jsonString = messageFormatter.FormatMessage(undefined, "DeleteContacts", true, "UPDATE : "+  profiles[0]);
+                }
+                res.end(jsonString);
+            }).catch(error => {
+                jsonString = messageFormatter.FormatMessage(error, "Fail To DeleteContacts", false, null);
+                res.end(jsonString);
+            })
+
+        } else {
+            jsonString = messageFormatter.FormatMessage(undefined, "Missing some important parameters", false, undefined);
             res.end(jsonString);
-        }).catch(error => {
-            jsonString = messageFormatter.FormatMessage(error, "Fail To DeleteContacts", false, null);
-            res.end(jsonString);
-        })
-    } else {
-        jsonString = messageFormatter.FormatMessage(undefined, "Missing some important parameters", false, undefined);
+        }
+    } catch (ex) {
+        jsonString = messageFormatter.FormatMessage(ex, "DeleteContacts", false, undefined);
         res.end(jsonString);
     }
+
 };
 
 

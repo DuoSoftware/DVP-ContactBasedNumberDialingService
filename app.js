@@ -129,6 +129,22 @@ server.get('/DVP/API/:version/Campaign/ProfileContactsCount', authorization({
     return next();
 });
 
+server.del('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
+    resource: "campaignnumbers",
+    action: "write"
+}), function (req, res, next) {
+    try {
+        logger.info('DeleteContacts');
+        externalProfileUploader.DeleteContacts(req,res);
+    }
+    catch (ex) {
+        let jsonString = messageFormatter.FormatMessage(ex, "EXCEPTION", false, undefined);
+        logger.error('DeleteContacts : %s ', jsonString);
+        res.end(jsonString);
+    }
+    return next();
+});
+
 server.listen(port, function () {
     logger.info("Contact base number Upload Server %s listening at %s", server.name, server.url);
 });
