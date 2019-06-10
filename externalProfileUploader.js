@@ -112,11 +112,12 @@ function process_counters(tenant, company, campaignID, scheduleId, profile_count
 /*---------------------- number Upload -------------------------------------*/
 
 function validate_external_profile(contact, tenant, company) {
-    let condition = contact.thirdpartyreference ? {
+    /*let condition = contact.thirdpartyreference ? {
         thirdpartyreference: contact.thirdpartyreference,
         company: company,
         tenant: tenant
-    } : {phone: contact.phone, company: company, tenant: tenant};
+    } : {phone: contact.phone, company: company, tenant: tenant};*/
+    let condition = {phone: contact.phone, company: company, tenant: tenant};
     return ExternalUser.findOne(condition);
 
     /* return new Promise((resolve, reject) => {
@@ -228,7 +229,11 @@ async function process_external_profile(contact, tenantId, companyId) {
             } else {
                 existing_profile._doc.contacts = contact.contacts;
             }
-            if (existing_profile._doc.thirdpartyreference === contact.thirdpartyreference) {
+
+            if ((existing_profile._doc.thirdpartyreference === null || existing_profile._doc.thirdpartyreference === undefined || existing_profile._doc.thirdpartyreference === "") && (existing_profile._doc.phone === contact.phone)) {
+                existing_profile._doc.thirdpartyreference = contact.thirdpartyreference
+            }
+            else if (existing_profile._doc.thirdpartyreference === contact.thirdpartyreference) {
                 existing_profile._doc.phone = contact.phone;
             }
 
@@ -717,8 +722,8 @@ module.exports.DeleteContacts = function (req, res) {
             //Array.isArray(third_party_references) && Array.isArray(primary_phone_nos)
             DeleteContacts(req).then(profiles => {
                 jsonString = messageFormatter.FormatMessage(new Error("Invalid Profile/campaign Ids"), "DeleteContacts", false, profiles[0]);
-                if(profiles[0]>0){
-                    jsonString = messageFormatter.FormatMessage(undefined, "DeleteContacts", true, "UPDATE : "+  profiles[0]);
+                if (profiles[0] > 0) {
+                    jsonString = messageFormatter.FormatMessage(undefined, "DeleteContacts", true, "UPDATE : " + profiles[0]);
                 }
                 res.end(jsonString);
             }).catch(error => {
