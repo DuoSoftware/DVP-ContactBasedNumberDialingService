@@ -652,8 +652,8 @@ module.exports.UploadExternalProfile = function (req, res) {
 
     }
     else {
-        consolelogger.log_message(consolelogger.loglevels.error, "Missing Important data or To Many Contacts To Upload");
-        jsonString = messageFormatter.FormatMessage(undefined, "Missing Important data or To Many Contacts To Upload. Max Limit is " + maxLength, false, undefined);
+        consolelogger.log_message(consolelogger.loglevels.error, "Missing Important data or Too Many Contacts To Upload");
+        jsonString = messageFormatter.FormatMessage(undefined, "Missing Important data or Too Many Contacts To Upload. Max Limit is " + maxLength, false, undefined);
         res.end(jsonString);
     }
 };
