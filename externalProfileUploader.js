@@ -632,17 +632,25 @@ module.exports.UploadExternalProfile = function (req, res) {
     if (req.body && req.body.contacts && req.body.contacts.length <= maxLength) {
 
         try {
+            if(req.params.schedule_id && req.params.CampaignID ){
+                let campaignID = parseInt(req.params.CampaignID);
+                let batchNo = req.body.batchNo;
+                process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo, req.params.schedule_id).then(docs => {
+                    jsonString = messageFormatter.FormatMessage(null, "All Numbers Uploaded To System", true, docs);
+                    res.end(jsonString);
+                }).catch(error => {
+                    consolelogger.log_message(consolelogger.loglevels.error, error);
+                    jsonString = messageFormatter.FormatMessage(error, "All Non Duplicate Numbers Uploaded To System", false, null);
+                    res.end(jsonString);
+                });
+            }
+            else{
+                let ex = new Error("Fail to Find CampaignID/schedule_id");
+                consolelogger.log_message(consolelogger.loglevels.error, ex);
+                jsonString = messageFormatter.FormatMessage(ex, "process_upload_numbers error", false, undefined);
+                res.end(jsonString);
+            }
 
-            let campaignID = parseInt(req.params.CampaignID);
-            let batchNo = req.body.batchNo;
-            process_upload_numbers(req.body.contacts, tenant, company, campaignID, batchNo, req.params.schedule_id).then(docs => {
-                jsonString = messageFormatter.FormatMessage(null, "All Numbers Uploaded To System", true, docs);
-                res.end(jsonString);
-            }).catch(error => {
-                consolelogger.log_message(consolelogger.loglevels.error, error);
-                jsonString = messageFormatter.FormatMessage(error, "All Non Duplicate Numbers Uploaded To System", false, null);
-                res.end(jsonString);
-            });
         } catch (ex) {
             consolelogger.log_message(consolelogger.loglevels.error, ex);
             jsonString = messageFormatter.FormatMessage(ex, "process_upload_numbers error", false, undefined);
