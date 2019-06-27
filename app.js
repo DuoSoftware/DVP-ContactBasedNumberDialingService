@@ -38,7 +38,8 @@ server.post('/DVP/API/:version/Campaign/:CampaignID/Contacts', authorization({
     action: "write"
 }), function (req, res, next) {
     try {
-        logger.info('UploadExternalProfile');
+        let jsonString = messageFormatter.FormatMessage(undefined, "UploadExternalProfile", true, req.body);
+        logger.debug(jsonString);
         externalProfileUploader.UploadExternalProfile(req,res);
     }
     catch (ex) {
