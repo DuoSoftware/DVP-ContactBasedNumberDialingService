@@ -482,7 +482,6 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
         }
         DbConn.CampContactbaseNumbers.findAll({
             where: condition,
-            offset: offset,
             limit: row_count,
             attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData']
         }).then(function (results) {
@@ -496,6 +495,22 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
         }).catch(function (err) {
             reject(err)
         });
+        /*DbConn.CampContactbaseNumbers.findAll({
+            where: condition,
+            offset: offset,
+            limit: row_count,
+            attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData']
+        }).then(function (results) {
+            if (results && results.length > 0) {
+                let ids = results.map(function (item) {
+                    return item.dataValues.CamContactBaseNumberId;
+                });
+                update_loaded_numbers(ids);
+            }
+            resolve(results);
+        }).catch(function (err) {
+            reject(err)
+        });*/
     });
 }
 
