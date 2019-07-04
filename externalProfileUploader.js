@@ -446,28 +446,30 @@ async function get_external_profiles(profile_ids, tenant, company) {
     }).select('phone api_contacts thirdpartyreference');
 }
 
-function update_loaded_numbers(CamContactBaseNumberIds) {
+const update_loaded_numbers = async function (CamContactBaseNumberIds) {
 
-
-    DbConn.CampContactbaseNumbers.update({
-            DialerStatus: "pick"
-        },
-        {
-            where: [
-                {
-                    CamContactBaseNumberId: {$in: CamContactBaseNumberIds}
-                }
-            ]
-        }
-    ).then(function (results) {
-        console.log(results);
-    }).catch(function (err) {
-        console.log(err);
+    return new Promise((resolve, reject) => {
+        DbConn.CampContactbaseNumbers.update({
+                DialerStatus: "pick"
+            },
+            {
+                where: [
+                    {
+                        CamContactBaseNumberId: {$in: CamContactBaseNumberIds}
+                    }
+                ]
+            }
+        ).then(function (results) {
+            resolve(results);
+        }).catch(function (err) {
+            console.log(err);
+            reject(err)
+        });
     });
+};
 
-}
 
-async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant, company, scheduleId) {
+const get_contact_by_campaign_id = async function (campaign_id, offset, row_count, tenant, company, scheduleId) {
     /*return DbConn.CampContactbaseNumbers.findAll({
         where: [{CampaignId: campaign_id}, {TenantId: tenant}, {CompanyId: company}, {Status: 'added'}],
         offset: offset,
@@ -485,12 +487,6 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
             limit: row_count,
             attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData']
         }).then(function (results) {
-            if (results && results.length > 0) {
-                let ids = results.map(function (item) {
-                    return item.dataValues.CamContactBaseNumberId;
-                });
-                update_loaded_numbers(ids);
-            }
             resolve(results);
         }).catch(function (err) {
             reject(err)
@@ -512,18 +508,25 @@ async function get_contact_by_campaign_id(campaign_id, offset, row_count, tenant
             reject(err)
         });*/
     });
-}
+};
 
 async function get_contact_processer(req, res) {
     let tenant = parseInt(req.user.tenant);
     let company = parseInt(req.user.company);
     let contact_list = await get_contact_by_campaign_id(req.params.CampaignID, req.params.offset, req.params.row_count, tenant, company, req.params.scheduleId);
+
     let external_profile_ids = [];
     let external_profile = {};
+    let ids =[];
     contact_list.forEach(function (item) {
         external_profile_ids.push(item.ExternalUserID);
         external_profile[item.ExternalUserID] = item.PreviewData;
+        ids.push(item.CamContactBaseNumberId)
     });
+    // update picked contact dialer status
+    let reply = await update_loaded_numbers(ids);
+    console.log(reply);
+
     let profile_list = await get_external_profiles(external_profile_ids, tenant, company);
 
     if (profile_list) {
