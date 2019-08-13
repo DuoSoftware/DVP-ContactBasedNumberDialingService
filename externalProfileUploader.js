@@ -230,9 +230,6 @@ async function process_external_profile(contact, tenantId, companyId) {
                 existing_profile._doc.contacts = contact.contacts;
             }
 
-            let jsonString = messageFormatter.FormatMessage(undefined, "---------------------------------", true, existing_profile._doc);
-            logger.debug(jsonString);
-
             if ((existing_profile._doc.thirdpartyreference === null || existing_profile._doc.thirdpartyreference === undefined || existing_profile._doc.thirdpartyreference === "") && (existing_profile._doc.phone === contact.phone)) {
                 existing_profile._doc.thirdpartyreference = contact.thirdpartyreference
             }
@@ -243,8 +240,6 @@ async function process_external_profile(contact, tenantId, companyId) {
             existing_profile._doc.contacts_update = contact.contacts_update;
             existing_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
             profile_list.existing_profile = existing_profile;
-            jsonString = messageFormatter.FormatMessage(undefined, "---------------------------------", true, existing_profile._doc);
-            logger.debug(jsonString);
         }
 
     }
@@ -280,14 +275,14 @@ async function update_existing_profile(profiles) {
                                         "verified": item._doc.verified
                                     }
                                 },
-                                '$set': {'phone': profile._doc.phone}
+                                '$set': {'phone': profile._doc.phone, 'thirdpartyreference': profile._doc.thirdpartyreference}
                             }, {upsert: true});
                         }
                     })
                 }
                 else {
                     bulk.find({_id: mongoose.Types.ObjectId(profile._doc._id.toString())}).update(
-                        {$set: {'api_contacts': profile._doc.contacts, 'phone': profile._doc.phone}}
+                        {$set: {'api_contacts': profile._doc.contacts, 'phone': profile._doc.phone, 'thirdpartyreference': profile._doc.thirdpartyreference}}
                     )
                 }
             }
