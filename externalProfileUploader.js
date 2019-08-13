@@ -243,7 +243,7 @@ async function process_external_profile(contact, tenantId, companyId) {
             existing_profile._doc.contacts_update = contact.contacts_update;
             existing_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
             profile_list.existing_profile = existing_profile;
-            let jsonString = messageFormatter.FormatMessage(undefined, "---------------------------------", true, existing_profile._doc);
+            jsonString = messageFormatter.FormatMessage(undefined, "---------------------------------", true, existing_profile._doc);
             logger.debug(jsonString);
         }
 
