@@ -230,6 +230,9 @@ async function process_external_profile(contact, tenantId, companyId) {
                 existing_profile._doc.contacts = contact.contacts;
             }
 
+            let jsonString = messageFormatter.FormatMessage(undefined, "---------------------------------", true, existing_profile._doc);
+            logger.debug(jsonString);
+
             if ((existing_profile._doc.thirdpartyreference === null || existing_profile._doc.thirdpartyreference === undefined || existing_profile._doc.thirdpartyreference === "") && (existing_profile._doc.phone === contact.phone)) {
                 existing_profile._doc.thirdpartyreference = contact.thirdpartyreference
             }
