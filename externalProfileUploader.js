@@ -215,6 +215,7 @@ async function process_external_profile(contact, tenantId, companyId) {
     if (existing_profile == null) {
         profile_list.new_profile = await build_new_external_profile(contact, tenantId, companyId);
         profile_list.new_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
+        profile_list.new_profile._doc.SkillID = contact.SkillID;
     }
     else {
 
@@ -236,7 +237,7 @@ async function process_external_profile(contact, tenantId, companyId) {
             else if (existing_profile._doc.thirdpartyreference === contact.thirdpartyreference) {
                 existing_profile._doc.phone = contact.phone;
             }
-
+            existing_profile._doc.SkillID = contact.SkillID;
             existing_profile._doc.contacts_update = contact.contacts_update;
             existing_profile._doc.PreviewData = JSON.stringify(contact.PreviewData);
             profile_list.existing_profile = existing_profile;
@@ -361,7 +362,8 @@ async function save_new_contacts(contacts, campaignID, tenant, company, batchNo,
                     BatchNo: batchNo ? batchNo : "default",
                     DialerStatus: 'added',
                     PreviewData: contacts[i]._doc.PreviewData,
-                    CamScheduleId: scheduleId
+                    CamScheduleId: scheduleId,
+                    SkillID:contacts[i]._doc.SkillID
                 };
                 nos.push(no);
                 profile_contact_count = profile_contact_count + (contacts[i]._doc.contacts ? contacts[i]._doc.contacts.length : 0);
