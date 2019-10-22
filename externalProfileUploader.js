@@ -487,7 +487,7 @@ const get_contact_by_campaign_id = async function (campaign_id, offset, row_coun
         DbConn.CampContactbaseNumbers.findAll({
             where: condition,
             limit: row_count,
-            attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData']
+            attributes: ['ExternalUserID', 'CamContactBaseNumberId', 'PreviewData','SkillID']
         }).then(function (results) {
             resolve(results);
         }).catch(function (err) {
@@ -522,7 +522,8 @@ async function get_contact_processer(req, res) {
     let ids =[];
     contact_list.forEach(function (item) {
         external_profile_ids.push(item.ExternalUserID);
-        external_profile[item.ExternalUserID] = item.PreviewData;
+        //external_profile[item.ExternalUserID] = item.PreviewData;
+        external_profile[item.ExternalUserID] = item;
         ids.push(item.CamContactBaseNumberId)
     });
     // update picked contact dialer status
@@ -533,7 +534,9 @@ async function get_contact_processer(req, res) {
 
     if (profile_list) {
         profile_list = profile_list.map(function (item) {
-            item._doc.PreviewData = external_profile[item._id.toString()];
+            let temp_data = external_profile[item._id.toString()];
+            item._doc.PreviewData = temp_data.PreviewData;
+            item._doc.SkillID = temp_data.SkillID;
             item._doc.TryCount = 1
             return item;
         })
