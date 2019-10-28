@@ -536,7 +536,7 @@ async function get_contact_processer(req, res) {
         profile_list = profile_list.map(function (item) {
             let temp_data = external_profile[item._id.toString()];
             item._doc.PreviewData = temp_data.PreviewData;
-            item._doc.Skills = [temp_data.SkillID];
+            item._doc.Skills = [temp_data.SkillID.toString()];
             item._doc.TryCount = 1
             return item;
         })
