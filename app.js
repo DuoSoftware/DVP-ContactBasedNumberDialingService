@@ -26,7 +26,6 @@ server.use(restify.queryParser());
 server.use(jwt({secret: secret.Secret}));
 let dbconn = require('dvp-mongomodels');
 let util = require('util');
-
 /*{
     "contacts":[{"firstname":"John", "lastname":"Smith","phone":"187078978505654078978","PreviewData":{"loan":"duo","ssn":"werwerwe"}, "contacts":[{"contact": "18705056560","type": "land","display": "18705056560","verified": true}]},
     {"firstname":"John", "lastname":"Smith","phone":"+941234567845345349999955665555","PreviewData":"credit"},
